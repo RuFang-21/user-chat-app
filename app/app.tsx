@@ -26,7 +26,11 @@ import { KeyboardProvider } from "react-native-keyboard-controller"
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
 import { TamaguiProvider } from "tamagui"
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "./context/AuthContext"
+
+const queryClient = new QueryClient()
+
 import { initI18n } from "./i18n"
 import { AppNavigator } from "./navigators/AppNavigator"
 import { useNavigationPersistence } from "./navigators/navigationUtilities"
@@ -88,17 +92,19 @@ export function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <TamaguiProvider config={tamaguiConfig}>
-          <KeyboardProvider>
-            <AuthProvider>
-              <BottomSheetModalProvider>
-                <AppNavigator
-                  linking={linking}
-                  initialState={initialNavigationState}
-                  onStateChange={onNavigationStateChange}
-                />
-              </BottomSheetModalProvider>
-            </AuthProvider>
-          </KeyboardProvider>
+          <QueryClientProvider client={queryClient}>
+            <KeyboardProvider>
+              <AuthProvider>
+                <BottomSheetModalProvider>
+                  <AppNavigator
+                    linking={linking}
+                    initialState={initialNavigationState}
+                    onStateChange={onNavigationStateChange}
+                  />
+                </BottomSheetModalProvider>
+              </AuthProvider>
+            </KeyboardProvider>
+          </QueryClientProvider>
         </TamaguiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -20,4 +20,5 @@ export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>
   Signin: undefined
   UserDetail: { id: string }
+  Chat: { userId: number; userName: string }
 }

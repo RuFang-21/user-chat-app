@@ -2,6 +2,7 @@ import { BottomTabScreenProps as NativeStackScreenProps } from "@react-navigatio
 
 export type BottomTabParamList = {
   Dashboard?: undefined
+  Settings?: undefined
 }
 
 export type BottomTabScreenProps<T extends keyof BottomTabParamList> = NativeStackScreenProps<

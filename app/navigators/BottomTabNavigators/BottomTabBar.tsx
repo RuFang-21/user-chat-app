@@ -4,6 +4,7 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs"
 import { getTokens, XStack } from "tamagui"
 
 import HomepageIcon from "@assets/icons/bottomTab/homepage.svg"
+import SettingsIcon from "@assets/icons/bottomTab/settings.svg"
 
 import { BottomTabParamList } from "./props"
 
@@ -24,6 +25,10 @@ const BottomTabBarView: React.FC<BottomTabBarProps> = (props) => {
       {
         name: "Dashboard",
         Icon: HomepageIcon,
+      },
+      {
+        name: "Settings",
+        Icon: SettingsIcon,
       },
     ],
     [],

@@ -1,18 +1,15 @@
-import { FC, useCallback, useMemo, useState } from "react"
+import { FC, useCallback, useState } from "react"
 import { FlatList, RefreshControl, TouchableOpacity } from "react-native"
-import { debounce } from "lodash"
-import { Separator, Spinner, Stack, XStack } from "tamagui"
+import { useQuery } from "@tanstack/react-query"
+import { Spinner, Stack, XStack } from "tamagui"
 
-import EmailIcon from "@assets/icons/email.svg"
-import LocationIcon from "@assets/icons/location.svg"
 import Logout from "@assets/icons/logout.svg"
-import PhoneIcon from "@assets/icons/phone.svg"
 import SearchIcon from "@assets/icons/search.svg"
 
 import { DashboardScreenProps } from "./props"
 import { Screen, ScreenHeader, Text, TextInput } from "../../components"
 import { useAuth } from "../../context/AuthContext"
-import { useUsers } from "../../hooks/useUsers"
+import { api } from "../../services/api"
 import { User } from "../../services/api/types"
 
 /**
@@ -20,104 +17,129 @@ import { User } from "../../services/api/types"
  * MAIN
  * ===========================
  */
+const AVATAR_COLORS = [
+  "#ef5350",
+  "#ec407a",
+  "#ab47bc",
+  "#7e57c2",
+  "#5c6bc0",
+  "#42a5f5",
+  "#29b6f6",
+  "#26c6da",
+  "#26a69a",
+  "#66bb6a",
+  "#9ccc65",
+  "#d4e157",
+  "#ffee58",
+  "#ffca28",
+  "#ffa726",
+  "#ff7043",
+  "#8d6e63",
+  "#78909c",
+]
+
+const getAvatarColor = (name: string) => {
+  const charCode = name.charCodeAt(0) || 0
+  return AVATAR_COLORS[charCode % AVATAR_COLORS.length]
+}
+
+const UserItem = ({ item, navigation }: { item: User; navigation: any }) => {
+  const { data: posts } = useQuery({
+    queryKey: ["posts", item.id],
+    queryFn: async () => {
+      const response = await api.getPostsByUserId(item.id)
+      if (response.kind === "ok") {
+        return response.posts
+      }
+      return []
+    },
+  })
+
+  const latestMessage = posts && posts.length > 0 ? posts[0].body : "No messages yet"
+
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        navigation.navigate("Chat", { userId: item.id, userName: item.name })
+      }}
+    >
+      <XStack
+        paddingVertical="$3"
+        paddingHorizontal="$4"
+        gap="$3"
+        alignItems="center"
+        borderBottomWidth={1}
+        borderBottomColor="#F0F0F0"
+      >
+        <Stack
+          width={50}
+          height={50}
+          borderRadius="$full"
+          backgroundColor={getAvatarColor(item.name)}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text fontSize="$lg" fontWeight="bold" color="white">
+            {item.name.charAt(0).toUpperCase()}
+          </Text>
+        </Stack>
+
+        <Stack flex={1} gap="$1">
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontWeight="bold" fontSize="$md">
+              {item.name}
+            </Text>
+            <Text fontSize="$xs" color="#888888">
+              12:30 PM
+            </Text>
+          </XStack>
+
+          <Text fontSize="$sm" color="#888888" numberOfLines={1}>
+            {latestMessage}
+          </Text>
+        </Stack>
+      </XStack>
+    </TouchableOpacity>
+  )
+}
+
 export const DashboardScreen: FC<DashboardScreenProps> = ({ navigation }) => {
-  const { users, loading, error, searchUsers, loadUsers } = useUsers()
   const { logout } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
 
-  // =============== EVENTS
-  const debouncedSearch = useMemo(
-    () =>
-      debounce(
-        (text: string) => {
-          if (text.trim() === "") {
-            loadUsers()
-          } else {
-            searchUsers(text)
-          }
-        },
-        300,
-        { trailing: true },
-      ),
-    [searchUsers, loadUsers],
-  )
-
-  const handleSearch = useCallback(
-    (query: string) => {
-      setSearchQuery(query)
-      debouncedSearch(query)
+  // fetch users
+  const {
+    data: users,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const response = await api.getUsers()
+      if (response.kind === "ok") {
+        return response.users
+      }
+      throw new Error("Failed to fetch users")
     },
-    [debouncedSearch],
-  )
+  })
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+  }, [])
+
+  const filteredUsers = Array.isArray(users)
+    ? users.filter((user) => user.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : []
 
   // =============== COMPONENTS
 
-  const renderUserCard = useCallback(({ item }: { item: User }) => {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          navigation?.getParent()?.navigate("UserDetail", { id: item.id.toString() })
-        }}
-      >
-        <Stack
-          style={{ borderWidth: 1, borderColor: "#CACACA", borderRadius: 8 }}
-          padding="$4"
-          gap="$2"
-          marginBottom="$4"
-        >
-          <Text fontWeight="bold" fontSize={"$lg"}>
-            {item.name}
-          </Text>
-
-          <Separator style={{ marginBottom: 8 }} />
-
-          <XStack gap={"$2"}>
-            <Stack
-              borderRadius="$full"
-              width={24}
-              height={24}
-              backgroundColor={"$blue100"}
-              alignItems="center"
-              justifyContent="center"
-            >
-              <EmailIcon width={14} height={14} color="$blue100" />
-            </Stack>
-            <Text>{item.email}</Text>
-          </XStack>
-
-          <XStack gap={"$2"}>
-            <Stack
-              borderRadius="$full"
-              width={24}
-              height={24}
-              backgroundColor={"$blue100"}
-              alignItems="center"
-              justifyContent="center"
-            >
-              <PhoneIcon width={14} height={14} color="$blue100" />
-            </Stack>
-            <Text>{item.phone}</Text>
-          </XStack>
-
-          <XStack gap={"$2"}>
-            <Stack
-              borderRadius="$full"
-              width={24}
-              height={24}
-              backgroundColor={"$blue100"}
-              alignItems="center"
-              justifyContent="center"
-            >
-              <LocationIcon width={14} height={14} color="$blue100" />
-            </Stack>
-            <Text>
-              {item.address.street}, {item.address.city}
-            </Text>
-          </XStack>
-        </Stack>
-      </TouchableOpacity>
-    )
-  }, [])
+  const renderUserCard = useCallback(
+    ({ item }: { item: User }) => {
+      return <UserItem item={item} navigation={navigation} />
+    },
+    [navigation],
+  )
 
   const renderListEmptyComponent = useCallback(
     () => (
@@ -134,7 +156,7 @@ export const DashboardScreen: FC<DashboardScreenProps> = ({ navigation }) => {
       <ScreenHeader
         unsafe
         left={false}
-        title={"User Explorer"}
+        title={"Chats"}
         titleProps={{
           fontSize: "$lg",
           fontWeight: "bold",
@@ -160,36 +182,35 @@ export const DashboardScreen: FC<DashboardScreenProps> = ({ navigation }) => {
       {/* Listing of order section */}
 
       <Stack flex={1}>
-        {loading ? (
+        {isLoading ? (
           <XStack justifyContent="center" paddingVertical="$8">
             <Spinner />
           </XStack>
         ) : error ? (
           <XStack justifyContent="center" paddingVertical="$8">
-            <Text color="$red10">Error: {error}</Text>
+            <Text color="$red10">
+              Error: {error instanceof Error ? error.message : "Unknown error"}
+            </Text>
           </XStack>
         ) : (
           <FlatList
             refreshControl={
               <RefreshControl
-                refreshing={false}
+                refreshing={isLoading}
                 onRefresh={() => {
-                  loadUsers()
+                  refetch()
                 }}
               />
             }
-            data={users}
+            data={filteredUsers}
             renderItem={renderUserCard}
             keyExtractor={(item) => item.id.toString()}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 16, paddingTop: 16 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="none"
             removeClippedSubviews={false}
             ListEmptyComponent={renderListEmptyComponent}
-            ListHeaderComponent={
-              <Text paddingBottom={"$sm"}>{`Total Users: ${users.length}`}</Text>
-            }
           />
         )}
       </Stack>

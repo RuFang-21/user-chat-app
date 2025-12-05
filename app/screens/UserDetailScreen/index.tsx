@@ -1,13 +1,40 @@
-import { FC, useEffect, useState } from "react"
+import { FC } from "react"
 import { ScrollView } from "react-native"
-import { Separator, Spinner, Stack, XStack } from "tamagui"
-
-import { useUsers } from "@/hooks/useUsers"
-import { User } from "@/services/api/types"
+import { useQuery } from "@tanstack/react-query"
+import { Button, Spinner, Stack, Text, XStack, YStack, useTheme } from "tamagui"
 
 import { UserDetailScreenProps } from "./props"
-import { Screen, ScreenHeader } from "../../components"
-import { Text } from "../../components/Text"
+import ContactIcon from "../../../assets/icons/contact.svg"
+import PhoneIcon from "../../../assets/icons/phone.svg"
+import { Screen, ScreenFooter, ScreenHeader } from "../../components"
+import { api } from "../../services/api"
+import { useBlockStore } from "../../store/useBlockStore"
+
+const AVATAR_COLORS = [
+  "#ef5350",
+  "#ec407a",
+  "#ab47bc",
+  "#7e57c2",
+  "#5c6bc0",
+  "#42a5f5",
+  "#29b6f6",
+  "#26c6da",
+  "#26a69a",
+  "#66bb6a",
+  "#9ccc65",
+  "#d4e157",
+  "#ffee58",
+  "#ffca28",
+  "#ffa726",
+  "#ff7043",
+  "#8d6e63",
+  "#78909c",
+]
+
+const getAvatarColor = (name: string) => {
+  const charCode = name.charCodeAt(0) || 0
+  return AVATAR_COLORS[charCode % AVATAR_COLORS.length]
+}
 
 /**
  * ===========================
@@ -16,78 +43,31 @@ import { Text } from "../../components/Text"
  */
 export const UserDetailScreen: FC<UserDetailScreenProps> = (props) => {
   const { id } = props.route.params
-  const { getUserById } = useUsers()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const theme = useTheme()
+  const iconColor = theme.gray10?.get() || "$gray10"
 
-  useEffect(() => {
-    getUserById(id).then((userData) => {
-      setUser(userData)
-      setLoading(false)
-    })
-  }, [id, getUserById])
+  // fetch user details
+  const { data: user, isLoading: loading } = useQuery({
+    queryKey: ["user", id],
+    queryFn: async () => {
+      const response = await api.getUser(id)
+      if (response.kind === "ok") {
+        return response.user
+      }
+      throw new Error("Failed to fetch user")
+    },
+  })
 
-  const userContactInfo = [
-    { title: "Username", content: user?.username || "" },
-    {
-      title: "Email",
-      content: user?.email || "",
-    },
-    {
-      title: "Phone",
-      content: user?.phone || "",
-    },
-    {
-      title: "Website",
-      content: user?.website || "",
-    },
-  ]
+  // block store
+  const { isBlocked, blockUser, unblockUser } = useBlockStore()
+  const blocked = isBlocked(Number(id))
 
-  const userAddressInfo = [
-    {
-      title: "Street",
-      content: user?.address.street || "",
-    },
-    {
-      title: "Suite",
-      content: user?.address.suite || "",
-    },
-    {
-      title: "City",
-      content: user?.address.city || "",
-    },
-    {
-      title: "Zipcode",
-      content: user?.address.zipcode || "",
-    },
-  ]
-
-  const userCompanyInfo = [
-    {
-      title: "Company Name",
-      content: user?.company.name || "",
-    },
-    {
-      title: "Tagline",
-      content: user?.company.catchPhrase || "",
-    },
-    {
-      title: "Business",
-      content: user?.company.bs || "",
-    },
-  ]
-
-  const renderUserDetail = ({ title, content }: { title: string; content: string }) => {
-    return (
-      <XStack gap="$2" marginBottom="$2">
-        <Text fontSize={"$md"} fontWeight="600" color="$gray11">
-          {title}:
-        </Text>
-        <Text fontSize={"$md"} flex={1}>
-          {content}
-        </Text>
-      </XStack>
-    )
+  const toggleBlock = () => {
+    if (blocked) {
+      unblockUser(Number(id))
+    } else {
+      blockUser(Number(id))
+    }
   }
 
   if (loading) {
@@ -125,52 +105,102 @@ export const UserDetailScreen: FC<UserDetailScreenProps> = (props) => {
   }
 
   return (
-    <Screen>
+    <Screen style={{ backgroundColor: "#f2f2f7" }}>
       <ScreenHeader
         unsafe
-        title={user?.name || "User Detail"}
+        title="Profile"
         titleProps={{
           fontSize: "$lg",
           fontWeight: "bold",
         }}
       />
       <ScrollView>
-        <Stack flex={1} padding="$4" gap="$4">
-          <Stack gap="$2">
-            <Text fontWeight={"bold"} fontSize={"$lg"} marginBottom="$2">
-              Contact Information
+        <YStack paddingVertical="$6" alignItems="center" backgroundColor="white" marginBottom="$4">
+          <Stack
+            width={100}
+            height={100}
+            borderRadius="$full"
+            backgroundColor={getAvatarColor(user.name)}
+            alignItems="center"
+            justifyContent="center"
+            marginBottom="$3"
+          >
+            <Text fontSize={40} fontWeight="bold" color="white">
+              {user.name.charAt(0).toUpperCase()}
             </Text>
-
-            {userContactInfo?.map((info, index) => (
-              <Stack key={index}>{renderUserDetail(info)}</Stack>
-            ))}
           </Stack>
+          <Text fontSize="$xl" fontWeight="bold" color="black" textAlign="center">
+            {user.name}
+          </Text>
+          <Text fontSize="$md" color="$gray11" marginTop="$1">
+            {user.phone}
+          </Text>
+        </YStack>
 
-          <Separator />
-
-          <Stack gap="$2">
-            <Text fontWeight={"bold"} fontSize={"$lg"} marginBottom="$2">
-              Address
-            </Text>
-
-            {userAddressInfo?.map((info, index) => (
-              <Stack key={index}>{renderUserDetail(info)}</Stack>
-            ))}
-          </Stack>
-
-          <Separator />
-
-          <Stack gap="$2">
-            <Text fontWeight={"bold"} fontSize={"$lg"} marginBottom="$2">
-              Company
-            </Text>
-
-            {userCompanyInfo?.map((info, index) => (
-              <Stack key={index}>{renderUserDetail(info)}</Stack>
-            ))}
-          </Stack>
-        </Stack>
+        <YStack
+          backgroundColor="white"
+          paddingLeft="$4"
+          borderTopWidth={1}
+          borderBottomWidth={1}
+          borderColor="$gray5"
+          marginBottom="$6"
+        >
+          <XStack
+            paddingVertical="$3"
+            borderBottomWidth={1}
+            borderColor="$gray4"
+            alignItems="center"
+            paddingRight="$4"
+          >
+            <ContactIcon width={20} height={20} fill={iconColor} />
+            <YStack marginLeft="$3" flex={1}>
+              <Text fontSize="$xs" color="$gray11">
+                Email
+              </Text>
+              <Text fontSize="$md" color="black">
+                {user.email}
+              </Text>
+            </YStack>
+          </XStack>
+          <XStack paddingVertical="$3" alignItems="center" paddingRight="$4">
+            <PhoneIcon width={20} height={20} stroke={iconColor} />
+            <YStack marginLeft="$3" flex={1}>
+              <Text fontSize="$xs" color="$gray11">
+                Website
+              </Text>
+              <Text fontSize="$md" color="black">
+                {user.website}
+              </Text>
+            </YStack>
+          </XStack>
+        </YStack>
       </ScrollView>
+
+      <ScreenFooter>
+        <Stack paddingHorizontal="$4" marginBottom="$6">
+          <Button
+            onPress={toggleBlock}
+            backgroundColor={blocked ? "white" : "white"}
+            color={blocked ? "$red10" : "$red10"}
+            borderColor="$red10"
+            borderWidth={1}
+            icon={blocked ? undefined : undefined}
+          >
+            {blocked ? "Unblock User" : "Block User"}
+          </Button>
+          <Text
+            fontSize="$xs"
+            color="$gray10"
+            textAlign="center"
+            marginTop="$2"
+            paddingHorizontal="$4"
+          >
+            {blocked
+              ? "You have blocked this contact. Tap to unblock."
+              : "Block this contact to stop receiving messages."}
+          </Text>
+        </Stack>
+      </ScreenFooter>
     </Screen>
   )
 }

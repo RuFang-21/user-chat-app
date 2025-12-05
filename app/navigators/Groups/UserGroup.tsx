@@ -1,5 +1,7 @@
+import UserDetailScreen from "@/screens/UserDetailScreen"
+
 import { CommonGroupProps } from "./props"
-import { UserDetailScreen } from "../../screens"
+import { ChatScreen } from "../../screens/ChatScreen"
 
 /**
  * ===========================
@@ -13,6 +15,7 @@ export const createUserGroup = (props: CommonGroupProps) => {
   return (
     <Stack.Group>
       <Stack.Screen name="UserDetail" component={UserDetailScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Group>
   )
 }

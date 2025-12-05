@@ -8,7 +8,7 @@
 import { ApiResponse, ApisauceInstance, create } from "apisauce"
 
 import { GeneralApiProblem, getGeneralApiProblem } from "./apiProblem"
-import type { ApiConfig, ApiFeedResponse, EpisodeItem, User } from "./types"
+import type { ApiConfig, ApiFeedResponse, ApiListResponse, EpisodeItem, Post, User } from "./types"
 import Config from "../../config"
 
 /**
@@ -76,12 +76,10 @@ export class Api {
   }
 
   /**
-   * Gets a list of users from JSONPlaceholder API.
+   * Gets a list of users.
    */
   async getUsers(): Promise<{ kind: "ok"; users: User[] } | GeneralApiProblem> {
-    const response: ApiResponse<User[]> = await this.apisauce.get(
-      "https://jsonplaceholder.typicode.com/users",
-    )
+    const response: ApiResponse<ApiListResponse<User>> = await this.apisauce.get("api/users")
 
     if (!response.ok) {
       const problem = getGeneralApiProblem(response)
@@ -89,7 +87,7 @@ export class Api {
     }
 
     try {
-      const users = response.data ?? []
+      const users = response.data?.results ?? []
       return { kind: "ok", users }
     } catch (error) {
       if (__DEV__ && error instanceof Error) {
@@ -103,9 +101,7 @@ export class Api {
     userId: string | number,
   ): Promise<{ kind: "ok"; user: User } | { kind: "bad-data" }> {
     try {
-      const response: ApiResponse<User> = await this.apisauce.get(
-        `https://jsonplaceholder.typicode.com/users/${userId}`,
-      )
+      const response: ApiResponse<User> = await this.apisauce.get(`api/users/${userId}`)
 
       if (!response.ok) {
         return { kind: "bad-data" }
@@ -115,6 +111,100 @@ export class Api {
     } catch (error) {
       if (__DEV__ && error instanceof Error) {
         console.error(`Bad data: ${error.message}`, error.stack)
+      }
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Gets a list of posts (messages).
+   */
+  async getPosts(): Promise<{ kind: "ok"; posts: Post[] } | GeneralApiProblem> {
+    const response: ApiResponse<ApiListResponse<Post>> = await this.apisauce.get("api/posts")
+
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    try {
+      const posts = response.data?.results ?? []
+      return { kind: "ok", posts }
+    } catch (error) {
+      if (__DEV__ && error instanceof Error) {
+        console.error(`Bad data: ${error.message}\n${response.data}`, error.stack)
+      }
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Gets a list of posts for a specific user.
+   */
+  async getPostsByUserId(
+    userId: number,
+  ): Promise<{ kind: "ok"; posts: Post[] } | GeneralApiProblem> {
+    const response: ApiResponse<ApiListResponse<Post>> = await this.apisauce.get(
+      `api/posts?userId=${userId}`,
+    )
+
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    try {
+      const posts = response.data?.results ?? []
+      return { kind: "ok", posts }
+    } catch (error) {
+      if (__DEV__ && error instanceof Error) {
+        console.error(`Bad data: ${error.message}\n${response.data}`, error.stack)
+      }
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Gets a single post by ID.
+   */
+  async getPost(postId: number): Promise<{ kind: "ok"; post: Post } | GeneralApiProblem> {
+    const response: ApiResponse<Post> = await this.apisauce.get(`api/posts/${postId}`)
+
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    try {
+      const post = response.data
+      return { kind: "ok", post: post as Post }
+    } catch (error) {
+      if (__DEV__ && error instanceof Error) {
+        console.error(`Bad data: ${error.message}\n${response.data}`, error.stack)
+      }
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Creates a new post (message).
+   */
+  async createPost(
+    post: Omit<Post, "id">,
+  ): Promise<{ kind: "ok"; post: Post } | GeneralApiProblem> {
+    const response: ApiResponse<Post> = await this.apisauce.post("api/posts", post)
+
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    try {
+      const createdPost = response.data
+      return { kind: "ok", post: createdPost as Post }
+    } catch (error) {
+      if (__DEV__ && error instanceof Error) {
+        console.error(`Bad data: ${error.message}\n${response.data}`, error.stack)
       }
       return { kind: "bad-data" }
     }

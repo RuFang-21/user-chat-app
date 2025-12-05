@@ -12,7 +12,7 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = function WelcomeScreen(_pro
     <Screen preset="fixed">
       <Stack flex={1} justifyContent="center" alignItems="center" gap={12} paddingHorizontal="$4">
         <Text fontSize={24} fontWeight={700} textAlign="center">
-          User Explorer App
+          User Chat App
         </Text>
         <Button variant="contained" style={{ padding: 12, width: 200 }} onPress={() => {}}>
           Get Started

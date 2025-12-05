@@ -1,6 +1,6 @@
-# User Explorer App
+# User Chat App
 
-A React Native application for exploring and managing user data from JSONPlaceholder API, built with Expo, TypeScript, and Tamagui.
+A React Native application for exploring and managing user data from ResponseRift API, built with Expo, TypeScript, and Tamagui.
 
 ## Setup Instructions
 
@@ -39,7 +39,7 @@ yarn android     # Run on Android simulator/device
 ### Features
 
 - ✅ **User Authentication**: Login screen with form validation
-- ✅ **User List Display**: Dashboard showing all users from JSONPlaceholder API
+- ✅ **User List Display**: Dashboard showing all users from ResponseRift API
 - ✅ **Search Functionality**: Real-time search across user name, email, phone, and city
 - ✅ **User Detail View**: Detailed information display for individual users
 - ✅ **Pull to Refresh**: Refresh user list with pull-down gesture
@@ -50,7 +50,6 @@ yarn android     # Run on Android simulator/device
 - ✅ **Empty States**: Proper messaging when no users found
 - ✅ **Responsive UI**: Clean, organized card layout with icons
 - ✅ **Type Safety**: Full TypeScript implementation with proper typing
-
 
 ## Technical Architecture
 
@@ -88,12 +87,12 @@ app/
 
 ### API Integration
 
-The application fetches user data from JSONPlaceholder API:
+The application fetches user data from ResponseRift API:
 
 **Endpoints Used:**
 
-- `GET https://jsonplaceholder.typicode.com/users` - Fetch all users
-- `GET https://jsonplaceholder.typicode.com/users/:id` - Fetch single user
+- `GET https://responserift.dev/api/users` - Fetch all users
+- `GET https://responserift.dev/api/users/:id` - Fetch single user
 
 ### State Management
 

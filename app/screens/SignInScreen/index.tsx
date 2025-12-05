@@ -73,7 +73,7 @@ export const SignInScreen: FC<SignInScreenProps> = ({ navigation: _navigation })
         {/* App Logo */}
         <Stack paddingTop={"$xl"}>
           <Text fontSize={"$3xl"} fontWeight="bold" color="$color" textAlign="center">
-            User Explorer App
+            User Chat App
           </Text>
         </Stack>
 
