@@ -1,6 +1,6 @@
 # User Chat App
 
-A React Native application for exploring and managing user data from ResponseRift API, built with Expo, TypeScript, and Tamagui.
+A React Native application for chatting with users, built with Expo, TypeScript, and Tamagui.
 
 ## Setup Instructions
 
@@ -17,7 +17,7 @@ A React Native application for exploring and managing user data from ResponseRif
 
 ```bash
 git clone <repository-url>
-cd user-explore
+cd user-chat-app
 yarn install
 ```
 
@@ -39,17 +39,23 @@ yarn android     # Run on Android simulator/device
 ### Features
 
 - ✅ **User Authentication**: Login screen with form validation
-- ✅ **User List Display**: Dashboard showing all users from ResponseRift API
-- ✅ **Search Functionality**: Real-time search across user name, email, phone, and city
-- ✅ **User Detail View**: Detailed information display for individual users
-- ✅ **Pull to Refresh**: Refresh user list with pull-down gesture
+- ✅ **Dashboard**: List of users with avatars and latest message preview
+- ✅ **Chat Interface**:
+  - Real-time chat UI with bubbles
+  - Sent/Received message distinction
+  - Timestamps
+  - Optimistic UI updates for sending messages
+- ✅ **User Profile**:
+  - Detailed user information (Name, Phone, Email, Website)
+  - Custom SVG icons for contact details
+  - Block/Unblock user functionality
+- ✅ **Settings**:
+  - Developer information
+  - Portfolio link
+  - App version display
 - ✅ **Navigation**: Bottom tab and stack navigation with proper routing
-- ✅ **Debounced Search**: Optimized search with 300ms debounce to reduce API calls
-- ✅ **Loading States**: Spinner indicators during data fetching
-- ✅ **Error Handling**: User-friendly error messages for API failures
-- ✅ **Empty States**: Proper messaging when no users found
-- ✅ **Responsive UI**: Clean, organized card layout with icons
-- ✅ **Type Safety**: Full TypeScript implementation with proper typing
+- ✅ **State Management**: Global state for blocked users using Zustand
+- ✅ **Data Fetching**: Efficient data fetching and caching with React Query
 
 ## Technical Architecture
 
@@ -59,29 +65,28 @@ yarn android     # Run on Android simulator/device
 - **TypeScript**: Type safety and enhanced development experience
 - **Tamagui**: Performance-optimized design system with compile-time styling
 - **React Navigation**: Bottom Tab and Stack navigation
+- **React Query (@tanstack/react-query)**: Powerful asynchronous state management
+- **Zustand**: Small, fast and scalable bearbones state-management solution
 - **Apisauce**: HTTP client for API communication
-- **Lodash**: Utility library for debouncing
 
 ### Project Structure
 
 ```
 app/
-├── components/          # Reusable UI components (Screen, Text, TextInput, etc.)
+├── components/          # Reusable UI components (Screen, Text, Button, etc.)
 ├── screens/            # Screen components
-│   ├── DashboardScreen/    # User list with search
-│   ├── UserDetailScreen/   # Individual user details
-│   └── LoginScreen/        # Authentication screen
-├── hooks/              # Custom React hooks
-│   └── useUsers.ts         # User data management hook
+│   ├── DashboardScreen/    # User list
+│   ├── ChatScreen/         # Chat interface
+│   ├── UserDetailScreen/   # User profile & blocking
+│   ├── SettingsScreen/     # App settings & info
+│   └── LoginScreen/        # Authentication
 ├── services/           # API and external services
-│   └── api/
-│       ├── index.ts        # API client with methods
-│       └── types.ts        # TypeScript interfaces
+│   └── api/            # API client (ResponseRift)
+├── store/              # Global state stores (Zustand)
+│   └── useBlockStore.ts    # Blocked users management
 ├── navigators/         # Navigation configuration
-│   ├── BottomTabNavigators/   # Bottom tab setup
-│   └── AppNavigator.tsx       # Main navigation structure
-├── context/            # React Context providers
-│   └── AuthContext.tsx     # Authentication state management
+│   ├── BottomTabNavigators/   # Main tab navigation
+│   └── AppNavigator.tsx       # Root stack navigation
 └── theme/              # Tamagui theme configuration
 ```
 
@@ -93,56 +98,40 @@ The application fetches user data from ResponseRift API:
 
 - `GET https://responserift.dev/api/users` - Fetch all users
 - `GET https://responserift.dev/api/users/:id` - Fetch single user
+- `GET https://responserift.dev/api/posts` - Fetch posts (messages)
+- `POST https://responserift.dev/api/posts` - Create new post (message)
 
 ### State Management
 
-**Custom Hooks Pattern:**
+**React Query:**
 
-- `useUsers()` hook manages all user-related state and operations
-- Provides functions: `loadUsers()`, `searchUsers()`, `getUserById()`
-- Handles loading states, error states, and data caching
-- Search filtering implemented client-side for better performance
+- Handles server state (Users, Posts)
+- Caching and background updates
+- Optimistic updates for chat messages
 
-**Authentication Context:**
+**Zustand:**
 
-- `AuthContext` provides login/logout functionality
-- Persists authentication state (implementation ready for token storage)
+- Handles client state
+- `useBlockStore`: Manages the list of blocked user IDs
 
 ### Key Implementation Details
 
-#### 1. Search Functionality
+#### 1. Chat Functionality
 
-- Debounced search with 300ms delay using lodash
-- Searches across: name, email, phone, and city fields
-- Client-side filtering for instant results
-- Clears filter when search query is empty
+- **UI**: Custom chat bubbles with dynamic styling based on sender/receiver.
+- **Logic**: Mocked logic to differentiate "sent" vs "received" messages for demo purposes (since API returns all posts from same user).
+- **Updates**: Optimistic UI updates ensure the chat feels responsive when sending a message.
 
-#### 2. User List Display
+#### 2. User Detail & Blocking
 
-- FlatList with optimized rendering
-- Pull-to-refresh functionality
-- Shows total user count in header
-- Empty state when no results found
-- Card-based layout with icons for email, phone, and location
+- **Profile**: Displays user details with custom SVG icons.
+- **Blocking**: Users can be blocked/unblocked. This state is persisted in the `useBlockStore` and affects the UI (e.g., button state).
 
-#### 3. User Detail Screen
-
-- Organized sections: Contact Information, Address, Company
-- Reusable detail item components
-- Proper loading and error states
-- ScrollView for content overflow
-
-#### 4. Navigation Flow
+#### 3. Navigation Flow
 
 ```
 AuthStack (Login) → MainNavigator
-  └── BottomTabNavigator (Dashboard)
-       └── StackNavigator (UserDetail)
+  └── BottomTabNavigator
+       ├── DashboardStack (Dashboard → Chat → UserDetail)
+       └── SettingsStack (Settings)
 ```
-
-### Technical Decisions
-
-1. **Tamagui over Styled Components**: Chosen for better performance with compile-time styling
-2. **Custom Hook Pattern**: Centralized data fetching logic in `useUsers` hook for reusability
-3. **TypeScript Strict Mode**: Full type safety to catch errors during development
-4. **Functional Components**: Used exclusively with React hooks (no class components)
